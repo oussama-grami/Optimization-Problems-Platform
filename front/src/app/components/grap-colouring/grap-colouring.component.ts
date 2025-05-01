@@ -819,10 +819,11 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     if (this.adjacencyMatrix[i][j] === 1) {
       // Check if an edge already exists before adding
       const edgeExists = this.edges.some(
-        edge => (edge.source === i && edge.target === j) || 
-                (edge.source === j && edge.target === i)
+        (edge) =>
+          (edge.source === i && edge.target === j) ||
+          (edge.source === j && edge.target === i)
       );
-      
+
       if (!edgeExists) {
         this.addEdgeWithAnimation(i, j);
       }
@@ -1326,11 +1327,8 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     const originalCtx = this.ctx;
     this.ctx = tempCtx;
 
-    // Render grid first (ensures grid appears in the export)
-    this.drawGrid();
-
-    // Render graph to temp canvas
-    this.renderGraph();
+    // Create a custom rendering function for export that doesn't include UI elements
+    this.exportRender(tempCanvas.width, tempCanvas.height);
 
     // Add a title
     tempCtx.fillStyle = this.isDarkTheme ? '#eaeaea' : '#2c3e50';
@@ -1363,6 +1361,93 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       link.click();
     }, 500);
+  }
+
+  // Special rendering function for export without UI elements
+  private exportRender(width: number, height: number): void {
+    // Clear the canvas
+    this.ctx.clearRect(0, 0, width, height);
+
+    // Draw background grid
+    this.drawGrid();
+
+    // Draw edges with enhanced selection zones
+    for (const edge of this.edges) {
+      if (edge.progress > 0) {
+        const source = this.nodes[edge.source];
+        const target = this.nodes[edge.target];
+
+        if (!source || !target) continue;
+
+        // Calculate the line's endpoints using the progress
+        const startX = source.x * this.scale + this.offset.x;
+        const startY = source.y * this.scale + this.offset.y;
+
+        const endX = source.x + (target.x - source.x) * edge.progress;
+        const endY = source.y + (target.y - source.y) * edge.progress;
+        const scaledEndX = endX * this.scale + this.offset.x;
+        const scaledEndY = endY * this.scale + this.offset.y;
+
+        // Draw the actual edge (no selection zones or hover effects in export)
+        this.ctx.beginPath();
+        this.ctx.moveTo(startX, startY);
+        this.ctx.lineTo(scaledEndX, scaledEndY);
+
+        if (edge.highlight) {
+          this.ctx.strokeStyle = this.isDarkTheme ? '#FFD700' : '#FF6B6B';
+          this.ctx.lineWidth = 3 * this.scale;
+        } else {
+          this.ctx.strokeStyle = this.isDarkTheme ? '#5a6270' : '#555555';
+          this.ctx.lineWidth = 2 * this.scale;
+        }
+
+        this.ctx.stroke();
+      }
+    }
+
+    // Draw nodes (no selection zones or hover effects in export)
+    for (const node of this.nodes) {
+      if (node.opacity > 0) {
+        const nodeRadius = 20 * this.scale * node.scale;
+        const nodeX = node.x * this.scale + this.offset.x;
+        const nodeY = node.y * this.scale + this.offset.y;
+
+        // Draw the actual node
+        this.ctx.beginPath();
+        this.ctx.arc(nodeX, nodeY, nodeRadius, 0, Math.PI * 2);
+
+        // Apply opacity
+        const prevGlobalAlpha = this.ctx.globalAlpha;
+        this.ctx.globalAlpha = node.opacity;
+
+        // Fill with color if node is colored
+        if (node.color !== null) {
+          this.ctx.fillStyle =
+            this.colorPalette[node.color % this.colorPalette.length];
+        } else {
+          this.ctx.fillStyle = this.isDarkTheme ? '#3a3f48' : '#ffffff';
+        }
+
+        this.ctx.fill();
+
+        // Node border
+        this.ctx.strokeStyle = this.isDarkTheme ? '#b9bbbe' : '#333333';
+        this.ctx.lineWidth = this.isDarkTheme ? 2 * this.scale : 2.5 * this.scale;
+        this.ctx.stroke();
+
+        // Draw node label
+        this.ctx.fillStyle = this.isDarkTheme ? '#eaeaea' : '#000000';
+        this.ctx.font = `${14 * this.scale * node.scale}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(node.id.toString(), nodeX, nodeY);
+
+        // Restore global alpha
+        this.ctx.globalAlpha = prevGlobalAlpha;
+      }
+    }
+
+    // No UI elements like mode or zoom indicators in the export
   }
 
   exportMatrix(): void {
