@@ -11,6 +11,17 @@
   --input-background: #ffffff;
   --input-border: #d1d5db;
   --input-text: #374151;
+
+  /* Graph coloring theme variables */
+  --primary-color: #4ECDC4;
+  --secondary-color: #556270;
+  --node-border-color: #333333;
+  --edge-color: #555555;
+  --node-text-color: #000000;
+  --matrix-cell-hover: rgba(78, 205, 196, 0.2);
+  --matrix-cell-border: #cccccc;
+  --graph-grid-color: #dddddd;
+  --panel-background-rgb: 255, 255, 255;
 }
 
 /* Global styles for proper theme support */
@@ -34,6 +45,17 @@ body {
   --input-background: #2d2d2d;
   --input-border: #6A717A; /* Lighter input border for better visibility */
   --input-text: #FFFFFF; /* Changed to white for better readability */
+
+  /* Graph coloring theme variables */
+  --primary-color: #5EEDE5;
+  --secondary-color: #8CA9FF;
+  --node-border-color: #FFFFFF;
+  --edge-color: #A2BBFF;
+  --node-text-color: #FFFFFF;
+  --matrix-cell-hover: rgba(94, 237, 229, 0.5);
+  --matrix-cell-border: #7A8999;
+  --graph-grid-color: #3A4456;
+  --panel-background-rgb: 30, 30, 30;
 }
 
 /* Fixed scrollbar styling for both themes */
@@ -73,3 +95,11 @@ input, select, textarea, button {
 *:focus {
   outline-color: #4ECDC4;
 }
+
+/* Common animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInLeft { from { transform: translateX(-50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes bounceIn { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
