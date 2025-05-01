@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {Injectable} from '@angular/core';
+import {Observable} from 'rxjs';
 
 export interface GraphColoringResult {
   chromaticNumber: number;
@@ -11,9 +11,10 @@ export interface GraphColoringResult {
   providedIn: 'root',
 })
 export class GraphColoringService {
-  private apiUrl = 'http://localhost:5000'; // Replace with your API URL
+  private apiUrl = "https://projectro-1.onrender.com"; // Replace with your API URL
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+  }
 
   colorGraph(adjacencyMatrix: number[][]): Observable<GraphColoringResult> {
     console.log('Adjacency Matrix:', adjacencyMatrix);

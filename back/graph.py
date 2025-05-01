@@ -9,26 +9,79 @@ def dsatur_coloring_nx(G):
     coloring = nx.coloring.greedy_color(G, strategy='DSATUR')
     return coloring
 
-def build_model_k_coloring(G, k):
-    """Builds an ILP model to check if a k-coloring exists."""
-    model = gp.Model(f"k_coloring_{k}")
-    V = list(G.nodes())
-    x = model.addVars(V, range(k), vtype=GRB.BINARY, name="x")
-
-    for v in V:
-        model.addConstr(gp.quicksum(x[v, j] for j in range(k)) == 1, f"one_color_{v}")
-
-    for u, v in G.edges():
-        for j in range(k):
-            model.addConstr(x[u, j] + x[v, j] <= 1, f"no_same_color_{u}_{v}_{j}")
-
-    model.Params.Presolve = 2
-    model.Params.Cuts = 2
-    model.Params.MIPFocus = 1
-    model.Params.Heuristics = 0.8
-    model.Params.Threads = 0
-    model.setObjective(0, GRB.MINIMIZE)
-    return model, x
+def solve_graph_coloring_gurobi(G):
+    """
+    Solves the graph coloring problem directly using Gurobi.
+    
+    This approach directly finds the minimum number of colors needed
+    by using a binary search approach integrated with Gurobi.
+    """
+    n = len(G.nodes())
+    
+    # Start with upperbounds from basic heuristics
+    upper_bound = min(n, max(G.degree())[1] + 1)  # Simple degree-based upper bound
+    lower_bound = 1
+    
+    # For very large graphs, use NetworkX to get a better initial upper bound
+    LARGE_MATRIX_THRESHOLD = 20
+    if n > LARGE_MATRIX_THRESHOLD:
+        # Use NetworkX as a fast heuristic to get a better upper bound
+        nx_coloring = dsatur_coloring_nx(G)
+        upper_bound = min(upper_bound, len(set(nx_coloring.values())))
+        print(f"Using NetworkX heuristic for large graph: upper bound = {upper_bound}")
+    
+    best_k = upper_bound
+    optimal_coloring = None
+    
+    # Binary search to find the chromatic number
+    while lower_bound <= upper_bound:
+        k = (lower_bound + upper_bound) // 2
+        print(f"Trying k={k} colors...")
+        
+        # Build the model for k-coloring
+        model = gp.Model(f"k_coloring_{k}")
+        V = list(G.nodes())
+        x = model.addVars(V, range(k), vtype=GRB.BINARY, name="x")
+        
+        # Each vertex must have exactly one color
+        for v in V:
+            model.addConstr(gp.quicksum(x[v, j] for j in range(k)) == 1, f"one_color_{v}")
+        
+        # Adjacent vertices must have different colors
+        for u, v in G.edges():
+            for j in range(k):
+                model.addConstr(x[u, j] + x[v, j] <= 1, f"no_same_color_{u}_{v}_{j}")
+        
+        # If we have a previous coloring and are trying a smaller k
+        if optimal_coloring and k < best_k:
+            # Try to reuse parts of the previous solution
+            for v in V:
+                old_color = optimal_coloring[v]
+                if old_color < k:  # If the old color is still valid
+                    x[v, old_color].Start = 1
+        
+        # We are checking feasibility, so no objective function needed
+        model.setObjective(0, GRB.MINIMIZE)
+        model.optimize()
+        
+        if model.Status == GRB.OPTIMAL:
+            # Found a feasible coloring with k colors
+            best_k = k
+            upper_bound = k - 1
+            
+            # Extract the coloring
+            current_coloring = {}
+            for v in G.nodes():
+                for j in range(k):
+                    if x[v, j].X > 0.5:
+                        current_coloring[v] = j
+                        break
+            optimal_coloring = current_coloring
+        else:
+            # No feasible k-coloring exists, try with more colors
+            lower_bound = k + 1
+    
+    return best_k, optimal_coloring
 
 def solve_graph_coloring_adj_matrix(adj_matrix):
     """Solves graph coloring for a graph represented by an adjacency matrix."""
@@ -39,40 +92,13 @@ def solve_graph_coloring_adj_matrix(adj_matrix):
         for j in range(i + 1, n):
             if adj_matrix[i][j] == 1:
                 G.add_edge(i, j)
-
     
-    init_coloring = dsatur_coloring_nx(G)
-    print("Initial coloring:", init_coloring)
-    lower_bound = 1
-    upper_bound = len(set(init_coloring.values())) + 1 
-    best_k = upper_bound
-    optimal_coloring = None
-
-    while lower_bound <= upper_bound:
-        k = (lower_bound + upper_bound) // 2
-        model, x = build_model_k_coloring(G, k)
-
-        for node, color in init_coloring.items():
-            if color < k:
-                x[node, color].Start = 1
-
-        model.optimize()
-
-        if model.Status == GRB.OPTIMAL:
-            best_k = k
-            upper_bound = k - 1
-            current_coloring = {}
-            for v in G.nodes():
-                for j in range(k):
-                    if x[v, j].X > 0.5:
-                        current_coloring[v] = j
-                        break
-            optimal_coloring = current_coloring
-        else:
-            lower_bound = k + 1
-
+    # Use the improved single-step Gurobi approach
+    chromatic_number, optimal_coloring = solve_graph_coloring_gurobi(G)
+    
+    # Convert to array format for the API response
     colored_graph_array = [optimal_coloring.get(i) for i in range(n)] if optimal_coloring else None
-    return best_k, colored_graph_array
+    return chromatic_number, colored_graph_array
 
 def get_adjacency_matrix_from_user():
     """Prompts the user to enter the adjacency matrix."""

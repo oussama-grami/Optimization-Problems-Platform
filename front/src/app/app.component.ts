@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { GrapColouringComponent } from './components/grap-colouring/grap-colouring.component';
-import { MaxFlowComponent } from './components/max-flow/max-flow.component';
+import {Component} from '@angular/core';
+import {
+  GrapColouringComponent
+} from './components/grap-colouring/grap-colouring.component';
 
 @Component({
   selector: 'app-root',
