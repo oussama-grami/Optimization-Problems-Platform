@@ -165,6 +165,10 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
   // UI
   showTips = true;
 
+  // New properties to track hover states
+  private hoveredNodeIndex: number | null = null;
+  private hoveredEdge: { source: number; target: number } | null = null;
+
   constructor(private graphColoringService: GraphColoringService) {}
 
   ngOnInit(): void {
@@ -331,6 +335,10 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     const x = (e.clientX - rect.left) / this.scale - this.offset.x;
     const y = (e.clientY - rect.top) / this.scale - this.offset.y;
 
+    // Update cursor style based on what the user is hovering over
+    this.updateCursorStyle(x, y);
+
+    // Process the pointer move (existing functionality)
     this.processPointerMove(x, y, e.clientX, e.clientY);
   }
 
@@ -388,7 +396,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     } else {
       // Check if clicking on an edge
       const clickedEdge = this.findEdgeAt(x, y);
-      
+
       if (clickedEdge !== null && this.mode === 'delete') {
         // If in delete mode and clicking on an edge, delete the edge
         this.deleteEdge(clickedEdge.source, clickedEdge.target);
@@ -448,13 +456,18 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
   }
 
   private findNodeAt(x: number, y: number): number | null {
-    const nodeRadius = 20;
+    // Increased selection radius for better user interaction
+    const nodeBaseRadius = 20;
+    const selectionRadius = 30; // Larger hit area for easier selection
+
     for (let i = 0; i < this.nodes.length; i++) {
       const node = this.nodes[i];
       const distance = Math.sqrt(
         Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2)
       );
-      if (distance <= nodeRadius) {
+
+      // Use the larger selection radius for finding nodes
+      if (distance <= selectionRadius) {
         return i;
       }
     }
@@ -462,53 +475,127 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
   }
 
   // Find if a point is close to an edge
-  private findEdgeAt(x: number, y: number): {source: number, target: number} | null {
+  private findEdgeAt(
+    x: number,
+    y: number
+  ): { source: number; target: number } | null {
     const threshold = 8; // Distance threshold for edge detection
-    
+
     for (const edge of this.edges) {
-      if (edge.progress > 0.5) { // Only consider mostly-formed edges
+      if (edge.progress > 0.5) {
+        // Only consider mostly-formed edges
         const source = this.nodes[edge.source];
         const target = this.nodes[edge.target];
-        
+
         if (!source || !target) continue;
-        
+
         // Calculate distance from point to line segment (edge)
         const distance = this.pointToLineDistance(
-          x, y,
-          source.x, source.y,
-          target.x, target.y
+          x,
+          y,
+          source.x,
+          source.y,
+          target.x,
+          target.y
         );
-        
+
         // Check if click is within threshold distance of the edge
         if (distance <= threshold / this.scale) {
-          return {source: edge.source, target: edge.target};
+          return { source: edge.source, target: edge.target };
         }
       }
     }
-    
+
     return null;
   }
-  
+
   // Calculate distance from point to line segment
   private pointToLineDistance(
-    x: number, y: number,
-    x1: number, y1: number,
-    x2: number, y2: number
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
   ): number {
     // Calculate length of line segment
     const lineLength = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-    
-    if (lineLength === 0) return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
-    
+
+    if (lineLength === 0)
+      return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
+
     // Calculate distance from point to line using vector projection
-    const t = Math.max(0, Math.min(1, (
-      (x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)
-    ) / (lineLength * lineLength)));
-    
+    const t = Math.max(
+      0,
+      Math.min(
+        1,
+        ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) /
+          (lineLength * lineLength)
+      )
+    );
+
     const projectionX = x1 + t * (x2 - x1);
     const projectionY = y1 + t * (y2 - y1);
-    
-    return Math.sqrt((x - projectionX) * (x - projectionX) + (y - projectionY) * (y - projectionY));
+
+    return Math.sqrt(
+      (x - projectionX) * (x - projectionX) +
+        (y - projectionY) * (y - projectionY)
+    );
+  }
+
+  private updateCursorStyle(x: number, y: number): void {
+    // Check if hovering over a node
+    const nodeIndex = this.findNodeAt(x, y);
+    const edge = this.findEdgeAt(x, y);
+
+    // Update hover states
+    this.hoveredNodeIndex = nodeIndex;
+    this.hoveredEdge = edge;
+
+    // Set cursor style based on what's being hovered and the current mode
+    const canvas = this.canvasRef.nativeElement;
+
+    if (nodeIndex !== null) {
+      // Hovering over a node
+      switch (this.mode) {
+        case 'delete':
+          canvas.style.cursor = 'no-drop';
+          break;
+        case 'connect':
+          canvas.style.cursor = this.connecting ? 'crosshair' : 'pointer';
+          break;
+        case 'move':
+          canvas.style.cursor = 'grab';
+          break;
+        default:
+          canvas.style.cursor = 'pointer';
+      }
+    } else if (edge !== null) {
+      // Hovering over an edge
+      if (this.mode === 'delete') {
+        canvas.style.cursor = 'no-drop';
+      } else {
+        canvas.style.cursor = 'pointer';
+      }
+    } else {
+      // Not hovering over any selectable element
+      switch (this.mode) {
+        case 'add':
+          canvas.style.cursor = 'cell';
+          break;
+        case 'delete':
+          canvas.style.cursor = 'default';
+          break;
+        case 'connect':
+          canvas.style.cursor = this.connecting ? 'crosshair' : 'default';
+          break;
+        case 'move':
+          canvas.style.cursor = 'move';
+          break;
+        default:
+          canvas.style.cursor = 'default';
+      }
+    }
   }
 
   addNodeWithAnimation(x: number, y: number): void {
@@ -724,13 +811,21 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
   matrixValueChanged(i: number, j: number): void {
     // Ensure the value is either 0 or 1
     this.adjacencyMatrix[i][j] = this.adjacencyMatrix[i][j] === 0 ? 0 : 1;
-    
+
     // Ensure matrix stays symmetric by updating both sides
     this.adjacencyMatrix[j][i] = this.adjacencyMatrix[i][j];
 
     // If the value changed to 1, add an edge
     if (this.adjacencyMatrix[i][j] === 1) {
-      this.addEdgeWithAnimation(i, j);
+      // Check if an edge already exists before adding
+      const edgeExists = this.edges.some(
+        edge => (edge.source === i && edge.target === j) || 
+                (edge.source === j && edge.target === i)
+      );
+      
+      if (!edgeExists) {
+        this.addEdgeWithAnimation(i, j);
+      }
     } else {
       // If the value changed to 0, remove the edge
       this.deleteEdge(i, j);
@@ -909,7 +1004,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     // Draw background grid
     this.drawGrid();
 
-    // Draw edges
+    // Draw edges with enhanced selection zones
     for (const edge of this.edges) {
       if (edge.progress > 0) {
         const source = this.nodes[edge.source];
@@ -924,16 +1019,39 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
         // For the animation, we draw only a portion of the line based on progress
         const endX = source.x + (target.x - source.x) * edge.progress;
         const endY = source.y + (target.y - source.y) * edge.progress;
+        const scaledEndX = endX * this.scale + this.offset.x;
+        const scaledEndY = endY * this.scale + this.offset.y;
 
+        // Check if this edge is being hovered
+        const isHovered =
+          this.hoveredEdge !== null &&
+          ((this.hoveredEdge.source === edge.source &&
+            this.hoveredEdge.target === edge.target) ||
+            (this.hoveredEdge.source === edge.target &&
+              this.hoveredEdge.target === edge.source));
+
+        // Draw invisible wider line for easier selection (selection zone)
+        if (edge.progress >= 0.9) {
+          // Only fully formed edges get selection zones
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(scaledEndX, scaledEndY);
+          ctx.lineWidth = 12 * this.scale; // Wider invisible selection zone
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0)'; // Invisible stroke
+          ctx.stroke();
+        }
+
+        // Draw the actual edge
         ctx.beginPath();
         ctx.moveTo(startX, startY);
-        ctx.lineTo(
-          endX * this.scale + this.offset.x,
-          endY * this.scale + this.offset.y
-        );
+        ctx.lineTo(scaledEndX, scaledEndY);
 
         if (edge.highlight) {
           ctx.strokeStyle = this.isDarkTheme ? '#FFD700' : '#FF6B6B';
+          ctx.lineWidth = 3 * this.scale;
+        } else if (isHovered) {
+          // Highlight edge when hovered
+          ctx.strokeStyle = this.isDarkTheme ? '#90CAF9' : '#4285F4';
           ctx.lineWidth = 3 * this.scale;
         } else {
           ctx.strokeStyle = this.isDarkTheme ? '#5a6270' : '#555555';
@@ -963,19 +1081,34 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
       ctx.setLineDash([]);
     }
 
-    // Draw nodes
+    // Draw nodes with enhanced selection zones
     for (const node of this.nodes) {
       if (node.opacity > 0) {
         const nodeRadius = 20 * this.scale * node.scale;
+        const nodeX = node.x * this.scale + this.offset.x;
+        const nodeY = node.y * this.scale + this.offset.y;
 
+        // Check if this node is being hovered
+        const isHovered = this.hoveredNodeIndex === node.id;
+
+        // Draw invisible larger circle for easier selection (hit zone)
+        if (node.scale > 0.5) {
+          // Only visible nodes get selection zones
+          ctx.beginPath();
+          ctx.arc(
+            nodeX,
+            nodeY,
+            nodeRadius + 10, // Larger invisible selection radius
+            0,
+            Math.PI * 2
+          );
+          ctx.fillStyle = 'rgba(0, 0, 0, 0)'; // Completely transparent
+          ctx.fill();
+        }
+
+        // Draw the actual node
         ctx.beginPath();
-        ctx.arc(
-          node.x * this.scale + this.offset.x,
-          node.y * this.scale + this.offset.y,
-          nodeRadius,
-          0,
-          Math.PI * 2
-        );
+        ctx.arc(nodeX, nodeY, nodeRadius, 0, Math.PI * 2);
 
         // Apply opacity
         const prevGlobalAlpha = ctx.globalAlpha;
@@ -990,6 +1123,17 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
         }
 
         ctx.fill();
+
+        // Draw selection glow/indicator when hovered
+        if (isHovered) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(nodeX, nodeY, nodeRadius + 4, 0, Math.PI * 2);
+          ctx.strokeStyle = this.isDarkTheme ? '#90CAF9' : '#4285F4';
+          ctx.lineWidth = 3 * this.scale;
+          ctx.stroke();
+          ctx.restore();
+        }
 
         // Improved node border visibility in light mode
         ctx.strokeStyle =
@@ -1008,11 +1152,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
         ctx.font = `${14 * this.scale * node.scale}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(
-          node.id.toString(),
-          node.x * this.scale + this.offset.x,
-          node.y * this.scale + this.offset.y
-        );
+        ctx.fillText(node.id.toString(), nodeX, nodeY);
 
         // Restore global alpha
         ctx.globalAlpha = prevGlobalAlpha;
@@ -1027,6 +1167,12 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
     ctx.fillText(`Zoom: ${this.scale.toFixed(2)}x`, 10, canvas.height - 10);
+
+    // Display current mode
+    const modeText = `Mode: ${
+      this.mode.charAt(0).toUpperCase() + this.mode.slice(1)
+    }`;
+    ctx.fillText(modeText, 10, canvas.height - 30);
   }
 
   private drawGrid(): void {
@@ -1182,7 +1328,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
 
     // Render grid first (ensures grid appears in the export)
     this.drawGrid();
-    
+
     // Render graph to temp canvas
     this.renderGraph();
 
