@@ -16,6 +16,7 @@ export class GraphColoringService {
   constructor(private http: HttpClient) {}
 
   colorGraph(adjacencyMatrix: number[][]): Observable<GraphColoringResult> {
+    console.log('Adjacency Matrix:', adjacencyMatrix);
     return this.http.post<GraphColoringResult>(
       `${this.apiUrl}/graph-coloring`,
       {

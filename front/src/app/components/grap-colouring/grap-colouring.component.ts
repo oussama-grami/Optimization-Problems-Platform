@@ -384,8 +384,11 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
         } else {
           // Create edge between connecting and clicked node
           if (this.connecting.id !== clickedNodeIndex) {
+            // Add edge with animation - this also updates the matrix directly
             this.addEdgeWithAnimation(this.connecting.id, clickedNodeIndex);
-            this.updateAdjacencyMatrix();
+
+            // No need to call updateAdjacencyMatrix here as addEdgeWithAnimation already updates it
+            // The redundant call was causing newly created edges to be missed in the matrix
           }
           this.connecting = null;
         }
@@ -705,6 +708,16 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
         highlight: true, // Highlight the new edge initially
       });
 
+      // Immediately update adjacency matrix when an edge is added
+      // Don't wait for animation to reach halfway point
+      if (
+        source < this.adjacencyMatrix.length &&
+        target < this.adjacencyMatrix.length
+      ) {
+        this.adjacencyMatrix[source][target] = 1;
+        this.adjacencyMatrix[target][source] = 1;
+      }
+
       // Animate the edge appearance
       const edge = this.edges[this.edges.length - 1];
       const animateEdge = () => {
@@ -725,9 +738,6 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
       };
 
       requestAnimationFrame(animateEdge);
-
-      // Update adjacency matrix
-      this.updateAdjacencyMatrix();
     }
   }
 
@@ -760,6 +770,16 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     if (edgeIndex !== -1) {
       const edge = this.edges[edgeIndex];
 
+      // Immediately update adjacency matrix when an edge is removed
+      // Don't wait for animation to complete
+      if (
+        source < this.adjacencyMatrix.length &&
+        target < this.adjacencyMatrix.length
+      ) {
+        this.adjacencyMatrix[source][target] = 0;
+        this.adjacencyMatrix[target][source] = 0;
+      }
+
       // Animate the edge disappearance
       const animateEdgeRemoval = () => {
         if (edge.progress > 0) {
@@ -768,9 +788,6 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
           if (edge.progress <= 0) {
             // Remove the edge after animation completes
             this.edges.splice(edgeIndex, 1);
-
-            // Update adjacency matrix
-            this.updateAdjacencyMatrix();
           } else {
             requestAnimationFrame(animateEdgeRemoval);
           }
@@ -1432,7 +1449,9 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
 
         // Node border
         this.ctx.strokeStyle = this.isDarkTheme ? '#b9bbbe' : '#333333';
-        this.ctx.lineWidth = this.isDarkTheme ? 2 * this.scale : 2.5 * this.scale;
+        this.ctx.lineWidth = this.isDarkTheme
+          ? 2 * this.scale
+          : 2.5 * this.scale;
         this.ctx.stroke();
 
         // Draw node label
