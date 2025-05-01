@@ -1,1 +1,146 @@
-<p>grap-colouring works!</p>
+<div class="container">
+  <h1 class="title">Graph Coloring</h1>
+
+  <div class="error-container" *ngIf="error">
+    <div class="error-message">{{ error }}</div>
+    <button class="close-btn" (click)="error = null">×</button>
+  </div>
+
+  <div class="graph-interface">
+    <div class="tools-panel">
+      <div class="tools-group">
+        <h3>Graph Tools</h3>
+        <button
+          [class.active]="mode === 'move'"
+          (click)="setMode('move')"
+          title="Move nodes or pan the canvas"
+        >
+          <i class="tool-icon">↕</i> Move
+        </button>
+        <button
+          [class.active]="mode === 'add'"
+          (click)="setMode('add')"
+          title="Add a new node"
+        >
+          <i class="tool-icon">+</i> Add Node
+        </button>
+        <button
+          [class.active]="mode === 'delete'"
+          (click)="setMode('delete')"
+          title="Delete a node"
+        >
+          <i class="tool-icon">-</i> Delete
+        </button>
+        <button
+          [class.active]="mode === 'connect'"
+          (click)="setMode('connect')"
+          title="Connect two nodes"
+        >
+          <i class="tool-icon">↔</i> Connect
+        </button>
+      </div>
+
+      <div class="tools-group">
+        <h3>View Controls</h3>
+        <button (click)="resetView()" title="Reset zoom and pan">
+          <i class="tool-icon">⟲</i> Reset View
+        </button>
+        <button (click)="resetGraph()" title="Clear the graph">
+          <i class="tool-icon">🗑</i> Clear Graph
+        </button>
+      </div>
+
+      <div class="tools-group">
+        <h3>Export/Import</h3>
+        <button (click)="exportImage()" title="Save the graph as an image">
+          <i class="tool-icon">📷</i> Export Image
+        </button>
+        <button
+          (click)="exportMatrix()"
+          title="Export adjacency matrix as JSON"
+        >
+          <i class="tool-icon">📤</i> Export Matrix
+        </button>
+        <div class="file-input-container">
+          <label for="importMatrix" class="file-input-label">
+            <i class="tool-icon">📥</i> Import Matrix
+          </label>
+          <input
+            type="file"
+            id="importMatrix"
+            accept=".json"
+            (change)="importMatrix($event)"
+            class="file-input"
+          />
+        </div>
+      </div>
+
+      <div class="tools-group">
+        <h3>Solve</h3>
+        <button
+          class="solve-btn"
+          (click)="colorGraph()"
+          [disabled]="isLoading || nodes.length === 0"
+          title="Solve the graph coloring problem"
+        >
+          <i class="tool-icon">🎨</i> Color Graph
+        </button>
+
+        <div class="result" *ngIf="chromaticNumber !== null">
+          <span>Chromatic Number: {{ chromaticNumber }}</span>
+        </div>
+      </div>
+
+      <div class="loading-container" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <span>Processing...</span>
+      </div>
+    </div>
+
+    <div class="canvas-container">
+      <canvas #graphCanvas></canvas>
+      <div class="instructions" *ngIf="nodes.length === 0">
+        <p>Click anywhere to add nodes, then connect them to create a graph.</p>
+      </div>
+      <div class="mode-indicator">
+        Mode: {{ mode | titlecase }}
+        <span *ngIf="connecting" class="connecting-indicator"
+          >Connecting from Node {{ connecting.id }}</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <div class="matrix-editor" *ngIf="adjacencyMatrix.length > 0">
+    <h3>Adjacency Matrix</h3>
+    <p class="matrix-help">
+      Edit values to add or remove connections between nodes.
+    </p>
+
+    <div class="matrix-container">
+      <table class="adjacency-matrix">
+        <tr>
+          <th></th>
+          <th *ngFor="let node of nodes; let j = index">{{ j }}</th>
+        </tr>
+        <tr *ngFor="let row of adjacencyMatrix; let i = index">
+          <th>{{ i }}</th>
+          <td
+            *ngFor="let cell of row; let j = index"
+            [class.diagonal]="i === j"
+            [class.editable]="i !== j"
+          >
+            <input
+              type="number"
+              min="0"
+              max="1"
+              [disabled]="i === j"
+              [(ngModel)]="adjacencyMatrix[i][j]"
+              (change)="matrixValueChanged(i, j)"
+            />
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>

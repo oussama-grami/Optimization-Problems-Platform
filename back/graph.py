@@ -1,6 +1,8 @@
 import gurobipy as gp
 from gurobipy import GRB
 import networkx as nx
+from flask import request, jsonify
+import json
 
 def dsatur_coloring_nx(G):
     """Applies DSatur coloring using NetworkX."""
@@ -110,6 +112,34 @@ def get_adjacency_matrix_from_user():
 
     return adj_matrix
 
+# Flask route for graph coloring
+def register_graph_coloring_routes(app):
+    @app.route('/graph-coloring', methods=['POST'])
+    def color_graph():
+        try:
+            data = request.get_json()
+            adjacency_matrix = data.get('adjacencyMatrix')
+            
+            if not adjacency_matrix:
+                return jsonify({'error': 'Adjacency matrix not provided'}), 400
+                
+            chromatic_number, colored_array = solve_graph_coloring_adj_matrix(adjacency_matrix)
+            
+            if chromatic_number is not None:
+                return jsonify({
+                    'chromaticNumber': chromatic_number,
+                    'coloredGraph': colored_array
+                })
+            else:
+                return jsonify({'error': 'Could not find a valid coloring'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/graph-coloring/check', methods=['GET'])
+    def check_service():
+        return jsonify({'status': 'Graph coloring service is running'})
+        
+# The code below will only execute when this file is run directly
 if __name__ == "__main__":
     try:
         env = gp.Env()

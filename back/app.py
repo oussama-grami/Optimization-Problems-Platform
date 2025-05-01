@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from ortools.linear_solver import pywraplp
 from flask_cors import CORS
+from graph import register_graph_coloring_routes
 
 app = Flask(__name__)
 CORS(app)
@@ -55,6 +56,8 @@ def run_max_flow():
 
     result = max_flow_lp(graph, capacities, source, sink)
     return jsonify(result)
+
+register_graph_coloring_routes(app)
 
 if __name__ == '__main__':
     app.run()
