@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
+import {RouterOutlet} from '@angular/router';
+import {
+  GrapColouringComponent
+} from './components/grap-colouring/grap-colouring.component';
 import {MaxFlowComponent} from './components/max-flow/max-flow.component';
-import { GrapColouringComponent } from './components/grap-colouring/grap-colouring.component';
 
 @Component({
   selector: 'app-root',
-  imports: [ MaxFlowComponent, GrapColouringComponent],
+  imports: [RouterOutlet, GrapColouringComponent,MaxFlowComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })

@@ -2,3 +2,5 @@ Flask
 Flask-Cors
 ortools
 gunicorn
+gurobipy
+networkx

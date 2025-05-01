@@ -60,4 +60,7 @@ def run_max_flow():
 register_graph_coloring_routes(app)
 
 if __name__ == '__main__':
-    app.run()
+    import os
+    port = int(os.environ.get('FLASK_RUN_PORT', 5000))
+    # Always bind to 0.0.0.0 to allow external connections to container
+    app.run(host='0.0.0.0', port=port, debug=False)

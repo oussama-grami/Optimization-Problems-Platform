@@ -1,1 +1,75 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Global theme variables */
+:root {
+  /* Light theme default variables */
+  --app-background: #f5f7fa;
+  --component-background: #ffffff;
+  --text-color: #333333;
+  --border-color: #e1e4e8;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --input-background: #ffffff;
+  --input-border: #d1d5db;
+  --input-text: #374151;
+}
+
+/* Global styles for proper theme support */
+body {
+  background-color: var(--app-background);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Apply dark mode when parent has dark-theme class - enhanced for better visibility */
+.dark-theme {
+  --app-background: #121212;
+  --component-background: #1e1e1e;
+  --text-color: #FFFFFF; /* Changed from #e0e0e0 to white for better visibility */
+  --border-color: #6A717A; /* Lighter border color for better definition */
+  --shadow-color: rgba(0, 0, 0, 0.6); /* Stronger shadow for better depth */
+  --input-background: #2d2d2d;
+  --input-border: #6A717A; /* Lighter input border for better visibility */
+  --input-text: #FFFFFF; /* Changed to white for better readability */
+}
+
+/* Fixed scrollbar styling for both themes */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--app-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Ensure all inputs and form elements respect the theme */
+input, select, textarea, button {
+  background-color: var(--input-background);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Stronger focus state for dark mode */
+.dark-theme *:focus {
+  outline-color: #5EEDE5; /* Brighter teal for better visibility in dark mode */
+  outline-width: 3px; /* Thicker outline for better focus visibility */
+}
+
+/* Ensure focus states are visible in both themes */
+*:focus {
+  outline-color: #4ECDC4;
+}

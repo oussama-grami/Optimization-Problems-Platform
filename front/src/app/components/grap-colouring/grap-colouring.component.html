@@ -1,7 +1,17 @@
-<div class="container">
-  <h1 class="title">Graph Coloring</h1>
+<div class="container" [class.dark-theme]="isDarkTheme">
+  <button
+    class="theme-toggle"
+    (click)="toggleTheme()"
+    [attr.aria-label]="
+      isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'
+    "
+  >
+    <i class="tool-icon">{{ isDarkTheme ? "☀️" : "🌙" }}</i>
+  </button>
 
-  <div class="error-container" *ngIf="error">
+  <h1 class="title">Interactive Graph Coloring</h1>
+
+  <div class="error-container" *ngIf="error" [@shakeAnimation]>
     <div class="error-message">{{ error }}</div>
     <button class="close-btn" (click)="error = null">×</button>
   </div>
@@ -48,6 +58,9 @@
         <button (click)="resetGraph()" title="Clear the graph">
           <i class="tool-icon">🗑</i> Clear Graph
         </button>
+        <button (click)="generateRandomGraph()" title="Generate a random graph">
+          <i class="tool-icon">🎲</i> Random Graph
+        </button>
       </div>
 
       <div class="tools-group">
@@ -86,12 +99,12 @@
           <i class="tool-icon">🎨</i> Color Graph
         </button>
 
-        <div class="result" *ngIf="chromaticNumber !== null">
+        <div class="result" *ngIf="chromaticNumber !== null" [@bounceAnimation]>
           <span>Chromatic Number: {{ chromaticNumber }}</span>
         </div>
       </div>
 
-      <div class="loading-container" *ngIf="isLoading">
+      <div class="loading-container" *ngIf="isLoading" [@fadeAnimation]>
         <div class="spinner"></div>
         <span>Processing...</span>
       </div>
@@ -99,10 +112,14 @@
 
     <div class="canvas-container">
       <canvas #graphCanvas></canvas>
-      <div class="instructions" *ngIf="nodes.length === 0">
+      <div class="instructions" *ngIf="nodes.length === 0" [@fadeAnimation]>
         <p>Click anywhere to add nodes, then connect them to create a graph.</p>
+        <p>Use the tools on the left to build your graph.</p>
+        <p>
+          When you're ready, click "Color Graph" to find the chromatic number.
+        </p>
       </div>
-      <div class="mode-indicator">
+      <div class="mode-indicator" [@slideAnimation]>
         Mode: {{ mode | titlecase }}
         <span *ngIf="connecting" class="connecting-indicator"
           >Connecting from Node {{ connecting.id }}</span
@@ -111,7 +128,11 @@
     </div>
   </div>
 
-  <div class="matrix-editor" *ngIf="adjacencyMatrix.length > 0">
+  <div
+    class="matrix-editor"
+    *ngIf="adjacencyMatrix.length > 0"
+    [@slideAnimation]
+  >
     <h3>Adjacency Matrix</h3>
     <p class="matrix-help">
       Edit values to add or remove connections between nodes.
@@ -129,6 +150,7 @@
             *ngFor="let cell of row; let j = index"
             [class.diagonal]="i === j"
             [class.editable]="i !== j"
+            [@cellAnimation]="'in'"
           >
             <input
               type="number"
@@ -142,5 +164,19 @@
         </tr>
       </table>
     </div>
+  </div>
+
+  <div class="tips-and-tricks" *ngIf="showTips">
+    <h3>Tips & Tricks</h3>
+    <ul>
+      <li>Use the mouse wheel to zoom in and out</li>
+      <li>Drag the canvas to move around</li>
+      <li>Connect nodes by selecting "Connect" mode</li>
+      <li>
+        The graph coloring algorithm will find the minimum number of colors
+      </li>
+      <li>You can edit the adjacency matrix directly</li>
+    </ul>
+    <button (click)="showTips = false" class="close-tips">Got it!</button>
   </div>
 </div>
