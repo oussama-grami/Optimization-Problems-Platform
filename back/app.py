@@ -11,6 +11,9 @@ def max_flow_lp(graph, capacities, source, sink):
     flow = {}
     for (i, j) in graph:
         flow[(i, j)] = solver.NumVar(0, capacities[f"{i},{j}"], f'f_{i}_{j}')
+    for (i, j) in graph:
+        if j == source:
+            solver.Add(flow[(i, j)] == 0)
 
     nodes = set(i for (i, j) in graph) | set(j for (i, j) in graph)
     for node in nodes:
