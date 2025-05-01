@@ -175,18 +175,10 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     // Load theme preference from localStorage
     this.isDarkTheme = localStorage.getItem('graphColoringTheme') === 'dark';
 
-    // Initialize with a small example graph
-    this.addNode(100, 100);
-    this.addNode(200, 100);
-    this.addNode(150, 200);
-
-    // Add some edges with animation
-    this.addEdgeWithAnimation(0, 1);
-    setTimeout(() => this.addEdgeWithAnimation(1, 2), 300);
-    setTimeout(() => this.addEdgeWithAnimation(2, 0), 600);
-
-    // Update adjacency matrix
-    this.updateAdjacencyMatrix();
+    // Initialize with empty graph - no nodes or edges by default
+    this.nodes = [];
+    this.edges = [];
+    this.adjacencyMatrix = [];
   }
 
   ngAfterViewInit(): void {

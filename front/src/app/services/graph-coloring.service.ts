@@ -11,7 +11,7 @@ export interface GraphColoringResult {
   providedIn: 'root',
 })
 export class GraphColoringService {
-  private apiUrl = 'https://projectro-1.onrender.com';
+  private apiUrl = 'http://localhost:5000'; // Replace with your API URL
 
   constructor(private http: HttpClient) {}
 

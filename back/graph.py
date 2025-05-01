@@ -42,6 +42,7 @@ def solve_graph_coloring_adj_matrix(adj_matrix):
 
     
     init_coloring = dsatur_coloring_nx(G)
+    print("Initial coloring:", init_coloring)
     lower_bound = 1
     upper_bound = len(set(init_coloring.values())) + 1 
     best_k = upper_bound
