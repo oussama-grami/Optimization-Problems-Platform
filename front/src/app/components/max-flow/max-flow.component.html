@@ -1,1 +1,148 @@
-<p>max-flow works!</p>
+<!-- max-flow.component.html -->
+<div class="max-flow-container">
+  <div class="header">
+    <h1>Interface de Flux Maximum</h1>
+    <p>Créez votre graphe et calculez le flux maximum entre une source et un puits</p>
+  </div>
+
+  <div class="toolbar">
+    <div class="tools">
+      <button
+        [class.active]="mode === 'add-node'"
+        (click)="setMode('add-node')"
+        title="Ajouter un nœud">
+        <i class="fa fa-plus-circle"></i> Nœud
+      </button>
+      <button
+        [class.active]="mode === 'add-edge'"
+        [disabled]="nodes.length < 2"
+        (click)="setMode('add-edge')"
+        title="Ajouter une arête">
+        <i class="fa fa-arrow-right"></i> Arête
+      </button>
+      <button
+        [class.active]="mode === 'move-node'"
+        [disabled]="nodes.length === 0"
+        (click)="setMode('move-node')"
+        title="Déplacer les nœuds">
+        <i class="fa fa-arrows-alt"></i> Déplacer
+      </button>
+      <button
+        [class.active]="mode === 'select-source'"
+        [disabled]="nodes.length === 0"
+        (click)="setMode('select-source')"
+        title="Sélectionner la source">
+        <i class="fa fa-play"></i> Source
+      </button>
+      <button
+        [class.active]="mode === 'select-sink'"
+        [disabled]="nodes.length === 0"
+        (click)="setMode('select-sink')"
+        title="Sélectionner le puits">
+        <i class="fa fa-stop"></i> Puits
+      </button>
+      <button
+        [class.active]="mode === 'delete'"
+        [disabled]="nodes.length === 0 && edges.length === 0"
+        (click)="setMode('delete')"
+        title="Supprimer un nœud ou une arête">
+        <i class="fa fa-trash-alt"></i> Supprimer
+      </button>
+    </div>
+
+    <div class="edge-controls" *ngIf="mode === 'add-edge'">
+      <label for="capacity">Capacité:</label>
+      <input
+        type="number"
+        id="capacity"
+        min="1"
+        [value]="capacity"
+        (change)="onCapacityChange($event)"
+      />
+    </div>
+
+    <div class="actions">
+      <button (click)="resetGraph()" title="Réinitialiser le graphe">
+        <i class="fa fa-trash"></i> Réinitialiser
+      </button>
+      <button
+        (click)="calculateMaxFlow()"
+        [disabled]="isLoading || source === null || sink === null"
+        title="Calculer le flux maximum">
+        <i class="fa fa-calculator"></i> Calculer
+      </button>
+      <button (click)="exportGraph()" [disabled]="nodes.length === 0" title="Exporter le graphe">
+        <i class="fa fa-download"></i> Exporter
+      </button>
+      <label class="import-btn" title="Importer un graphe">
+        <i class="fa fa-upload"></i> Importer
+        <input
+          type="file"
+          accept=".json"
+          style="display: none"
+          (change)="importGraph($event)"
+        />
+      </label>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="graph-container">
+      <div class="canvas-wrapper">
+        <div #graphCanvas class="graph-canvas"></div>
+      </div>
+
+      <div class="instructions" *ngIf="nodes.length === 0">
+        <h3>Instructions:</h3>
+        <ul>
+          <li>Cliquez sur le canvas pour ajouter des nœuds</li>
+          <li>Utilisez les boutons pour changer de mode</li>
+          <li>Sélectionnez une source et un puits</li>
+          <li>Ajoutez des arêtes entre les nœuds</li>
+          <li>Cliquez sur "Calculer" pour trouver le flux maximum</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="results-panel" *ngIf="result">
+      <h3>Résultats</h3>
+      <div class="result-info">
+        <p><strong>Flux Maximum:</strong> {{ result.max_flow }}</p>
+      </div>
+
+      <div class="flows-table">
+        <h4>Détail des flux</h4>
+        <table>
+          <thead>
+          <tr>
+            <th>De</th>
+            <th>Vers</th>
+            <th>Capacité</th>
+            <th>Flux</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let edge of edges">
+            <td>{{ edge.from }}</td>
+            <td>{{ edge.to }}</td>
+            <td>{{ edge.capacity }}</td>
+            <td>{{ edge.flow !== undefined ? edge.flow : '-' }}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-message" *ngIf="error">
+    <div class="alert alert-danger">
+      {{ error }}
+      <button class="close-btn" (click)="error = null">&times;</button>
+    </div>
+  </div>
+
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Calcul en cours...</p>
+  </div>
+</div>

@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from ortools.linear_solver import pywraplp
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 #Max flow problem Algorithm , Don't touch this
 def max_flow_lp(graph, capacities, source, sink):
