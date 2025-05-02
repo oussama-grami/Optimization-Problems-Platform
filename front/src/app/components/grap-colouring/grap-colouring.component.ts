@@ -1409,8 +1409,8 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     // Clear the canvas
     this.ctx.clearRect(0, 0, width, height);
 
-    // Draw background grid
-    this.drawGrid();
+    // Nous supprimons l'appel à drawGrid() pour enlever la grille dans l'image exportée
+    // this.drawGrid();
 
     // Draw edges with enhanced selection zones
     for (const edge of this.edges) {
