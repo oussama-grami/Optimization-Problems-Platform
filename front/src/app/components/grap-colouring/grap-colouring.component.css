@@ -66,16 +66,22 @@ body {width: 100vw;}
 }
 
 /* Button styles */
-button {
+button, .file-input-label {
   background-color: var(--app-background);
   border: 1px solid var(--border-color);
   padding: 8px 12px;
   color: var(--text-color);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  display: inline-block;
+  border-radius: 4px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1rem;
+  text-align: center;
 }
 
-button:hover {
+button:hover, .file-input-label:hover {
   background-color: var(--primary-color);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -84,6 +90,14 @@ button:hover {
 button.active {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
+}
+
+.file-input {
+  display: none;
+}
+
+.file-input-container {
+  width: 100%;
 }
 
 .solve-btn {
@@ -247,6 +261,14 @@ canvas {
   font-weight: bold;
   text-align: center;
   border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.dark-theme .result {
+  background-color: rgba(78, 205, 196, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(78, 205, 196, 0.5);
+  box-shadow: 0 0 8px rgba(78, 205, 196, 0.3);
 }
 
 .instructions {
