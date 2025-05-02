@@ -697,6 +697,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
           (e.source === target && e.target === source)
       )
     ) {
+      // Add edge to the graph
       this.edges.push({
         source,
         target,
@@ -705,11 +706,13 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
       });
 
       // Immediately update adjacency matrix when an edge is added
-      // Don't wait for animation to reach halfway point
-      if (
-        source < this.adjacencyMatrix.length &&
-        target < this.adjacencyMatrix.length
-      ) {
+      // Make sure we have space in the matrix
+      while (this.adjacencyMatrix.length <= Math.max(source, target)) {
+        this.expandAdjacencyMatrix();
+      }
+
+      // Update the matrix
+      if (this.adjacencyMatrix[source] && this.adjacencyMatrix[target]) {
         this.adjacencyMatrix[source][target] = 1;
         this.adjacencyMatrix[target][source] = 1;
       }
@@ -1599,25 +1602,68 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
             }
           }
 
-          // Clear existing graph with animation
-          this.resetGraph();
+          // Show loading indicator for large matrices
+          if (numNodes > 20) {
+            this.isLoading = true;
+          }
 
-          // Wait for reset animation to complete
-          setTimeout(() => {
-            // Create nodes in a circle layout
-            const radius = 150;
-            const centerX = 300;
-            const centerY = 300;
+          // Clear all existing nodes and edges immediately without animation
+          this.nodes = [];
+          this.edges = [];
 
-            // Create all nodes first
+          // Set the adjacency matrix directly
+          this.adjacencyMatrix = JSON.parse(JSON.stringify(matrix));
+
+          // Calculate optimal node placement based on number of nodes
+          let positions: { x: number; y: number }[] = [];
+          const canvas = this.canvasRef.nativeElement;
+          const canvasWidth = canvas.width;
+          const canvasHeight = canvas.height;
+
+          // Create optimal node positions using appropriate layout algorithm
+          if (numNodes <= 20) {
+            // For smaller graphs, use an enhanced circle layout
+            positions = this.createCircleLayout(
+              numNodes,
+              canvasWidth,
+              canvasHeight
+            );
+          } else if (numNodes <= 50) {
+            // For medium graphs, use improved spiral layout
+            positions = this.createSpiralLayout(
+              numNodes,
+              canvasWidth,
+              canvasHeight
+            );
+          } else {
+            // For very large graphs, use grid layout for better distribution
+            positions = this.createGridLayout(
+              numNodes,
+              canvasWidth,
+              canvasHeight
+            );
+          }
+
+          // Add nodes at calculated positions
+          for (let i = 0; i < numNodes; i++) {
+            this.addNode(positions[i].x, positions[i].y);
+          }
+
+          // For large graphs, optimize edge addition by skipping animations
+          if (numNodes > 20) {
+            // For large graphs, add edges without animation
             for (let i = 0; i < numNodes; i++) {
-              const angle = (i / numNodes) * 2 * Math.PI;
-              const x = centerX + radius * Math.cos(angle);
-              const y = centerY + radius * Math.sin(angle);
-              this.addNode(x, y);
+              for (let j = i + 1; j < numNodes; j++) {
+                if (matrix[i][j] === 1) {
+                  this.addEdge(i, j);
+                }
+              }
             }
 
-            // Add edges based on the matrix
+            // Update adjacency matrix once for all edges
+            this.updateAdjacencyMatrix();
+          } else {
+            // For smaller graphs, we can afford animations
             for (let i = 0; i < numNodes; i++) {
               for (let j = i + 1; j < numNodes; j++) {
                 if (matrix[i][j] === 1) {
@@ -1625,10 +1671,13 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
                 }
               }
             }
+          }
 
-            // Set the adjacency matrix directly to ensure consistency
-            this.adjacencyMatrix = matrix;
-          }, 500);
+          // Reset the view to ensure all nodes are visible with proper zoom level
+          setTimeout(() => {
+            this.fitGraphToView();
+            this.isLoading = false;
+          }, 100);
         } else {
           this.error = "Format de matrice d'adjacence invalide";
         }
@@ -1636,6 +1685,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
         this.error =
           "Échec de l'analyse du fichier: " +
           (err instanceof Error ? err.message : String(err));
+        this.isLoading = false;
       }
 
       // Reset input value so the same file can be imported again
@@ -1652,24 +1702,20 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
 
     // If the matrix needs to be expanded
     if (newSize > currentSize) {
-      // Add new rows
-      for (let i = currentSize; i < newSize; i++) {
-        // Add a new row filled with zeros
-        this.adjacencyMatrix.push(Array(currentSize).fill(0));
-      }
+      // Create a new matrix of the appropriate size
+      const newMatrix = Array(newSize)
+        .fill(0)
+        .map(() => Array(newSize).fill(0));
 
-      // Add new columns to each existing row
-      for (let i = 0; i < newSize; i++) {
-        for (let j = currentSize; j < newSize; j++) {
-          if (i === j) {
-            // Add zeros on the diagonal
-            this.adjacencyMatrix[i][j] = 0;
-          } else if (i < currentSize) {
-            // Extend existing rows
-            this.adjacencyMatrix[i].push(0);
-          }
+      // Copy existing values
+      for (let i = 0; i < currentSize; i++) {
+        for (let j = 0; j < currentSize; j++) {
+          newMatrix[i][j] = this.adjacencyMatrix[i][j];
         }
       }
+
+      // Replace the existing matrix with the expanded one
+      this.adjacencyMatrix = newMatrix;
     }
   }
 
@@ -1696,5 +1742,178 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
       // Ensure cursor is reset
       document.body.style.cursor = 'default';
     }
+  }
+
+  // Create a circular layout for smaller graphs
+  private createCircleLayout(
+    numNodes: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): { x: number; y: number }[] {
+    const positions: { x: number; y: number }[] = [];
+    // Calculate optimal radius based on canvas size and node count
+    const minDim = Math.min(canvasWidth, canvasHeight);
+    const radius = minDim * 0.35; // Use 35% of the smallest dimension
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+
+    for (let i = 0; i < numNodes; i++) {
+      const angle = (i / numNodes) * 2 * Math.PI;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      positions.push({ x, y });
+    }
+
+    return positions;
+  }
+
+  // Create an improved spiral layout for medium-sized graphs
+  private createSpiralLayout(
+    numNodes: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): { x: number; y: number }[] {
+    const positions: { x: number; y: number }[] = [];
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+
+    // Calculate optimal parameters for node spacing
+    const nodeRadius = 20; // Default node radius
+    const minDistance = nodeRadius * 3; // Minimum distance between nodes (3x node radius)
+    let spiralSpacing = Math.max(
+      minDistance,
+      Math.sqrt((canvasWidth * canvasHeight) / numNodes) * 0.75
+    );
+
+    // Starting radius and angle
+    let radius = spiralSpacing;
+    let angle = 0;
+
+    // Generate positions along an Archimedean spiral
+    for (let i = 0; i < numNodes; i++) {
+      // Calculate position
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      positions.push({ x, y });
+
+      // Increase angle and radius for next node
+      angle += Math.min(2.0, 3.6 / Math.sqrt(numNodes)); // Angle increment gets smaller with more nodes
+      radius += spiralSpacing / (2 * Math.PI); // Gradual increase in radius
+    }
+
+    return positions;
+  }
+
+  // Create a grid layout for very large graphs
+  private createGridLayout(
+    numNodes: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): { x: number; y: number }[] {
+    const positions: { x: number; y: number }[] = [];
+    // Calculate a grid that fits all nodes with adequate spacing
+    const nodeRadius = 20;
+    const spacing = nodeRadius * 4; // More space between nodes in grid layout
+
+    // Calculate grid dimensions (try to make it somewhat square)
+    const cols = Math.ceil(Math.sqrt(numNodes));
+    const rows = Math.ceil(numNodes / cols);
+
+    // Calculate the dimensions of the grid
+    const gridWidth = cols * spacing;
+    const gridHeight = rows * spacing;
+
+    // Calculate starting position to center the grid
+    const startX = (canvasWidth - gridWidth) / 2 + spacing / 2;
+    const startY = (canvasHeight - gridHeight) / 2 + spacing / 2;
+
+    // Create node positions in a grid pattern
+    for (let i = 0; i < numNodes; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = startX + col * spacing;
+      const y = startY + row * spacing;
+
+      // Add some small random offset to break perfect alignment
+      const jitterX = (Math.random() - 0.5) * spacing * 0.5;
+      const jitterY = (Math.random() - 0.5) * spacing * 0.5;
+
+      positions.push({
+        x: x + jitterX,
+        y: y + jitterY,
+      });
+    }
+
+    return positions;
+  }
+
+  // Method to adjust the view to fit the entire graph
+  fitGraphToView(): void {
+    if (this.nodes.length === 0) return;
+
+    // Find the bounds of all nodes
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+
+    for (const node of this.nodes) {
+      minX = Math.min(minX, node.x);
+      minY = Math.min(minY, node.y);
+      maxX = Math.max(maxX, node.x);
+      maxY = Math.max(maxY, node.y);
+    }
+
+    // Calculate the required scale and offset
+    const canvas = this.canvasRef.nativeElement;
+    const padding = 50; // Padding around the graph
+
+    const graphWidth = maxX - minX + padding * 2;
+    const graphHeight = maxY - minY + padding * 2;
+
+    // Calculate the scale needed to fit the graph
+    const scaleX = canvas.width / graphWidth;
+    const scaleY = canvas.height / graphHeight;
+    let newScale = Math.min(scaleX, scaleY, 1.5); // Limit max zoom to 1.5
+
+    // Ensure we don't zoom in too much for small graphs
+    newScale = Math.min(newScale, 1.0);
+
+    // Calculate center points
+    const graphCenterX = (minX + maxX) / 2;
+    const graphCenterY = (minY + maxY) / 2;
+
+    const viewportCenterX = canvas.width / 2;
+    const viewportCenterY = canvas.height / 2;
+
+    // Calculate new offset to center the graph
+    const newOffsetX = viewportCenterX - graphCenterX * newScale;
+    const newOffsetY = viewportCenterY - graphCenterY * newScale;
+
+    // Animate the transition to new view
+    const startScale = this.scale;
+    const startOffset = { ...this.offset };
+    const duration = 750; // ms
+    const startTime = performance.now();
+
+    const animateView = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Use easing function for smooth animation
+      const easedProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease out
+
+      this.scale = startScale + (newScale - startScale) * easedProgress;
+      this.offset.x =
+        startOffset.x + (newOffsetX - startOffset.x) * easedProgress;
+      this.offset.y =
+        startOffset.y + (newOffsetY - startOffset.y) * easedProgress;
+
+      if (progress < 1) {
+        requestAnimationFrame(animateView);
+      }
+    };
+
+    requestAnimationFrame(animateView);
   }
 }
