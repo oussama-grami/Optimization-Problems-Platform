@@ -19,7 +19,7 @@ export interface MaxFlowResponse {
   providedIn: 'root'
 })
 export class MaxFlowService {
-  private apiUrl = 'http://localhost:5000/maxflow'; // L'URL de votre API Flask
+  private apiUrl = 'https://maxflow.onrender.com/maxflow'; // L'URL de votre API Flask
 
   constructor(private http: HttpClient) { }
 
