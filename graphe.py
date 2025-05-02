@@ -3,9 +3,9 @@ from gurobipy import GRB
 import networkx as nx
 
 def dsatur_coloring_nx(G):
-    """Applies DSatur coloring using NetworkX."""
+    """Applies DSatur coloring using NetworkX and returns the number of colors."""
     coloring = nx.coloring.greedy_color(G, strategy='DSATUR')
-    return coloring
+    return len(set(coloring.values()))
 
 def build_model_k_coloring(G, k):
     """Builds an ILP model to check if a k-coloring exists."""
@@ -38,21 +38,15 @@ def solve_graph_coloring_adj_matrix(adj_matrix):
             if adj_matrix[i][j] == 1:
                 G.add_edge(i, j)
 
-    
-    init_coloring = dsatur_coloring_nx(G)
+    initial_num_colors = dsatur_coloring_nx(G)
     lower_bound = 1
-    upper_bound = len(set(init_coloring.values())) + 1 
+    upper_bound = initial_num_colors + 1
     best_k = upper_bound
     optimal_coloring = None
 
     while lower_bound <= upper_bound:
         k = (lower_bound + upper_bound) // 2
         model, x = build_model_k_coloring(G, k)
-
-        for node, color in init_coloring.items():
-            if color < k:
-                x[node, color].Start = 1
-
         model.optimize()
 
         if model.Status == GRB.OPTIMAL:
@@ -118,7 +112,7 @@ if __name__ == "__main__":
         # env.setParam('WLSSecret', 'your_secret')
         # env.setParam('LicenseID', your_license_id)
         env.start()
-        gp.Model(env=env) 
+        gp.Model(env=env)
     except gp.GurobiError as e:
         print(f"Gurobi error: {e}")
         exit()
