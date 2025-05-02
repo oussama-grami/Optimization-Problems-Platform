@@ -3,13 +3,13 @@
     class="theme-toggle"
     (click)="toggleTheme()"
     [attr.aria-label]="
-      isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'
+      isDarkTheme ? 'Passer au thème clair' : 'Passer au thème sombre'
     "
   >
     <i class="tool-icon">{{ isDarkTheme ? "☀️" : "🌙" }}</i>
   </button>
 
-  <h1 class="title">Interactive Graph Coloring</h1>
+  <h1 class="title">Coloriage de Graphe Interactif</h1>
 
   <div class="error-container" *ngIf="error" [@shakeAnimation]>
     <div class="error-message">{{ error }}</div>
@@ -19,64 +19,73 @@
   <div class="graph-interface">
     <div class="tools-panel">
       <div class="tools-group">
-        <h3>Graph Tools</h3>
+        <h3>Outils Graphe</h3>
         <button
           [class.active]="mode === 'move'"
           (click)="setMode('move')"
-          title="Move nodes or pan the canvas"
+          title="Déplacer les nœuds ou le canevas"
         >
-          <i class="tool-icon">↕</i> Move
+          <i class="tool-icon">↕</i> Déplacer
         </button>
         <button
           [class.active]="mode === 'add'"
           (click)="setMode('add')"
-          title="Add a new node"
+          title="Ajouter un nouveau nœud"
         >
-          <i class="tool-icon">+</i> Add Node
+          <i class="tool-icon">+</i> Ajouter Nœud
         </button>
         <button
           [class.active]="mode === 'delete'"
           (click)="setMode('delete')"
-          title="Delete a node"
+          title="Supprimer un nœud"
         >
-          <i class="tool-icon">-</i> Delete
+          <i class="tool-icon">-</i> Supprimer
         </button>
         <button
           [class.active]="mode === 'connect'"
           (click)="setMode('connect')"
-          title="Connect two nodes"
+          title="Connecter deux nœuds"
         >
-          <i class="tool-icon">↔</i> Connect
+          <i class="tool-icon">↔</i> Connecter
         </button>
       </div>
 
       <div class="tools-group">
-        <h3>View Controls</h3>
-        <button (click)="resetView()" title="Reset zoom and pan">
-          <i class="tool-icon">⟲</i> Reset View
+        <h3>Contrôles d'Affichage</h3>
+        <button
+          (click)="resetView()"
+          title="Réinitialiser le zoom et le panoramique"
+        >
+          <i class="tool-icon">⟲</i> Réinitialiser Vue
         </button>
-        <button (click)="resetGraph()" title="Clear the graph">
-          <i class="tool-icon">🗑</i> Clear Graph
+        <button (click)="resetGraph()" title="Effacer le graphe">
+          <i class="tool-icon">🗑</i> Effacer Graphe
         </button>
-        <button (click)="generateRandomGraph()" title="Generate a random graph">
-          <i class="tool-icon">🎲</i> Random Graph
+        <button
+          (click)="generateRandomGraph()"
+          title="Générer un graphe aléatoire"
+        >
+          <i class="tool-icon">🎲</i> Graphe Aléatoire
         </button>
       </div>
 
       <div class="tools-group">
-        <h3>Export/Import</h3>
-        <button (click)="exportImage()" title="Save the graph as an image">
-          <i class="tool-icon">📷</i> Export Image
+        <h3>Exporter/Importer</h3>
+        <button
+          (click)="exportImage()"
+          title="Sauvegarder le graphe comme une image"
+        >
+          <i class="tool-icon">📷</i> Exporter Image
         </button>
         <button
           (click)="exportMatrix()"
-          title="Export adjacency matrix as JSON"
+          title="Exporter la matrice d'adjacence en JSON"
         >
-          <i class="tool-icon">📤</i> Export Matrix
+          <i class="tool-icon">📤</i> Exporter Matrice
         </button>
         <div class="file-input-container">
           <label for="importMatrix" class="file-input-label">
-            <i class="tool-icon">📥</i> Import Matrix
+            <i class="tool-icon">📥</i> Importer Matrice
           </label>
           <input
             type="file"
@@ -89,40 +98,44 @@
       </div>
 
       <div class="tools-group">
-        <h3>Solve</h3>
+        <h3>Résoudre</h3>
         <button
           class="solve-btn"
           (click)="colorGraph()"
           [disabled]="isLoading || nodes.length === 0"
-          title="Solve the graph coloring problem"
+          title="Résoudre le problème de coloriage de graphe"
         >
-          <i class="tool-icon">🎨</i> Color Graph
+          <i class="tool-icon">🎨</i> Colorier Graphe
         </button>
 
         <div class="result" *ngIf="chromaticNumber !== null" [@bounceAnimation]>
-          <span>Chromatic Number: {{ chromaticNumber }}</span>
+          <span>Nombre Chromatique: {{ chromaticNumber }}</span>
         </div>
       </div>
 
       <div class="loading-container" *ngIf="isLoading" [@fadeAnimation]>
         <div class="spinner"></div>
-        <span>Processing...</span>
+        <span>Traitement en cours...</span>
       </div>
     </div>
 
     <div class="canvas-container">
       <canvas #graphCanvas></canvas>
       <div class="instructions" *ngIf="nodes.length === 0" [@fadeAnimation]>
-        <p>Click anywhere to add nodes, then connect them to create a graph.</p>
-        <p>Use the tools on the left to build your graph.</p>
         <p>
-          When you're ready, click "Color Graph" to find the chromatic number.
+          Cliquez n'importe où pour ajouter des nœuds, puis connectez-les pour
+          créer un graphe.
+        </p>
+        <p>Utilisez les outils à gauche pour construire votre graphe.</p>
+        <p>
+          Quand vous êtes prêt, cliquez sur "Colorier Graphe" pour trouver le
+          nombre chromatique.
         </p>
       </div>
       <div class="mode-indicator" [@slideAnimation]>
         Mode: {{ mode | titlecase }}
         <span *ngIf="connecting" class="connecting-indicator"
-          >Connecting from Node {{ connecting.id }}</span
+          >Connexion depuis Nœud {{ connecting.id }}</span
         >
       </div>
     </div>
@@ -133,9 +146,10 @@
     *ngIf="adjacencyMatrix.length > 0"
     [@slideAnimation]
   >
-    <h3>Adjacency Matrix</h3>
+    <h3>Matrice d'Adjacence</h3>
     <p class="matrix-help">
-      Edit values to add or remove connections between nodes.
+      Modifiez les valeurs pour ajouter ou supprimer des connexions entre les
+      nœuds.
     </p>
 
     <div class="matrix-container">
@@ -167,16 +181,17 @@
   </div>
 
   <div class="tips-and-tricks" *ngIf="showTips">
-    <h3>Tips & Tricks</h3>
+    <h3>Astuces & Conseils</h3>
     <ul>
-      <li>Use the mouse wheel to zoom in and out</li>
-      <li>Drag the canvas to move around</li>
-      <li>Connect nodes by selecting "Connect" mode</li>
+      <li>Utilisez la molette de la souris pour zoomer et dézoomer</li>
+      <li>Faites glisser le canevas pour vous déplacer</li>
+      <li>Connectez les nœuds en sélectionnant le mode "Connecter"</li>
       <li>
-        The graph coloring algorithm will find the minimum number of colors
+        L'algorithme de coloriage de graphe trouvera le nombre minimum de
+        couleurs
       </li>
-      <li>You can edit the adjacency matrix directly</li>
+      <li>Vous pouvez modifier directement la matrice d'adjacence</li>
     </ul>
-    <button (click)="showTips = false" class="close-tips">Got it!</button>
+    <button (click)="showTips = false" class="close-tips">Compris !</button>
   </div>
 </div>

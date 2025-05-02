@@ -883,7 +883,8 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
       },
       error: (error) => {
         this.error =
-          'Error coloring graph: ' + (error.message || 'Unknown error');
+          'Erreur lors du coloriage du graphe: ' +
+          (error.message || 'Erreur inconnue');
         this.isLoading = false;
       },
     });
@@ -895,20 +896,51 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
       node.color = null;
     }
 
+    // Safety check: if coloredGraph is null or not an array with enough elements, exit early
+    if (
+      !coloredGraph ||
+      !Array.isArray(coloredGraph) ||
+      coloredGraph.length < this.nodes.length
+    ) {
+      console.error('Invalid coloring data received:', coloredGraph);
+      this.error = 'Données de coloration invalides reçues du serveur';
+      return;
+    }
+
     // Apply colors with delay for animation effect
     let delay = 0;
     const interval = 200; // ms between node colorings
 
     for (let i = 0; i < this.nodes.length; i++) {
       setTimeout(() => {
+        // Skip if node index is out of bounds (nodes might have been deleted)
+        if (i >= this.nodes.length) return;
+
+        // Skip if color index is invalid
+        if (
+          i >= coloredGraph.length ||
+          coloredGraph[i] === null ||
+          coloredGraph[i] === undefined
+        ) {
+          console.warn(`No color data for node ${i}`);
+          return;
+        }
+
         // Find nodes that should get the same color
         const color = coloredGraph[i];
         const sameColorIndices = coloredGraph
-          .map((c, idx) => (c === color ? idx : -1))
+          .map((c, idx) => (c === color && idx < this.nodes.length ? idx : -1))
           .filter((idx) => idx !== -1);
 
         // Highlight the edges between same color nodes first (this would be an error)
         for (const edge of this.edges) {
+          // Make sure edge source and target are valid
+          if (
+            edge.source >= this.nodes.length ||
+            edge.target >= this.nodes.length
+          )
+            continue;
+
           if (
             sameColorIndices.includes(edge.source) &&
             sameColorIndices.includes(edge.target)
@@ -1344,9 +1376,9 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     tempCtx.font = '40px Arial';
     tempCtx.textAlign = 'center';
     tempCtx.fillText(
-      `Graph Coloring ${
+      `Coloriage de Graphe ${
         this.chromaticNumber
-          ? `- Chromatic Number: ${this.chromaticNumber}`
+          ? `- Nombre Chromatique: ${this.chromaticNumber}`
           : ''
       }`,
       tempCanvas.width / 2,
@@ -1362,10 +1394,10 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     const image = tempCanvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.href = image;
-    link.download = 'graph-coloring.png';
+    link.download = 'coloriage-graphe.png';
 
     // Add animation effect
-    this.flashScreen('Exporting Image...');
+    this.flashScreen("Exportation d'Image...");
 
     setTimeout(() => {
       link.click();
@@ -1467,10 +1499,10 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'adjacency_matrix.json';
+    link.download = 'matrice_adjacence.json';
 
     // Add animation effect
-    this.flashScreen('Exporting Matrix...');
+    this.flashScreen('Exportation de la Matrice...');
 
     setTimeout(() => {
       link.click();
@@ -1542,7 +1574,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
 
           if (!isSquare) {
             this.error =
-              'Matrix must be square (same number of rows and columns)';
+              'La matrice doit être carrée (même nombre de lignes et de colonnes)';
             return;
           }
 
@@ -1594,11 +1626,11 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
             this.adjacencyMatrix = matrix;
           }, 500);
         } else {
-          this.error = 'Invalid adjacency matrix format';
+          this.error = "Format de matrice d'adjacence invalide";
         }
       } catch (err) {
         this.error =
-          'Failed to parse file: ' +
+          "Échec de l'analyse du fichier: " +
           (err instanceof Error ? err.message : String(err));
       }
 
