@@ -194,6 +194,9 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
     // Initialize canvas event listeners
     this.setupCanvasListeners();
 
+    // Add document click listener to handle clicks outside canvas
+    document.addEventListener('click', this.handleDocumentClick.bind(this));
+
     // Start animation loop
     this.startAnimationLoop();
   }
@@ -206,6 +209,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
 
     // Remove event listeners
     window.removeEventListener('resize', this.resizeCanvas.bind(this));
+    document.removeEventListener('click', this.handleDocumentClick.bind(this));
   }
 
   @HostListener('window:beforeunload')
@@ -1666,6 +1670,31 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
           }
         }
       }
+    }
+  }
+
+  // Handler for clicks outside the canvas
+  private handleDocumentClick(e: MouseEvent): void {
+    // Check if click is inside canvas
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+
+    const isClickInsideCanvas =
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom;
+
+    // If clicking outside canvas and in connect mode with an active connection
+    if (
+      !isClickInsideCanvas &&
+      this.mode === 'connect' &&
+      this.connecting !== null
+    ) {
+      // Cancel the connection
+      this.connecting = null;
+      // Ensure cursor is reset
+      document.body.style.cursor = 'default';
     }
   }
 }
