@@ -385,6 +385,31 @@ canvas {
   transform: scale(1.1);
 }
 
+/* Footer title */
+.footer-title {
+  text-align: center;
+  font-size: 1rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-top: 1px solid var(--border-color);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.footer-title span {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .footer-title {
+    font-size: 0.9rem;
+  }
+}
+
 /* Responsiveness */
 @media (max-width: 992px) {
   .graph-interface {flex-direction: column;}

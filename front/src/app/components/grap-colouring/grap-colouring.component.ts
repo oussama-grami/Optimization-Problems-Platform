@@ -126,7 +126,7 @@ export class GrapColouringComponent implements OnInit, AfterViewInit {
   private animationFrameId: number | null = null;
 
   // Theme
-  isDarkTheme = false;
+  isDarkTheme = true;
 
   // Graph data
   nodes: Node[] = [];

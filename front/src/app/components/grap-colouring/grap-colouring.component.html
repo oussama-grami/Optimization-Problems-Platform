@@ -1,5 +1,5 @@
 <div class="container" [class.dark-theme]="isDarkTheme">
-  <button
+  <!--<button
     class="theme-toggle"
     (click)="toggleTheme()"
     [attr.aria-label]="
@@ -7,7 +7,7 @@
     "
   >
     <i class="tool-icon">{{ isDarkTheme ? "☀️" : "🌙" }}</i>
-  </button>
+  </button>-->
 
   <h1 class="title">Coloriage de Graphe Interactif</h1>
 
@@ -205,5 +205,9 @@
       </li>
     </ul>
     <button (click)="showTips = false" class="close-tips">Compris !</button>
+  </div>
+
+  <div class="footer-title" [@fadeAnimation]>
+    Projet RO - <span>GL 3</span> - INSAT - 2025
   </div>
 </div>
